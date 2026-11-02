@@ -23,6 +23,8 @@ type BasketOutput = {
 
 type CheckoutOutput = { ok: boolean; orderId?: string; basketId?: string; totalUsd?: number; error?: string };
 
+type MonthlyOutput = { ok: boolean; approveUrl?: string; monthlyUsd?: number; error?: string };
+
 const EXAMPLE =
   "Send my mother Fatoumata in Bamako what she needs for the month: rice, oil, sugar and her blood pressure medicine. Budget $80.";
 
@@ -37,7 +39,7 @@ export default function Home() {
     !busy &&
     last?.role === "assistant" &&
     last.parts.some((p) => p.type === "tool-propose_basket" && p.state === "output-available" && (p.output as BasketOutput).ok) &&
-    !last.parts.some((p) => p.type === "tool-create_checkout");
+    !last.parts.some((p) => p.type === "tool-create_checkout" || p.type === "tool-start_monthly_basket");
 
   function send(text: string) {
     if (!text.trim() || busy) return;
@@ -113,6 +115,23 @@ export default function Home() {
                   if (!out.ok || !out.orderId) return null;
                   return <Checkout key={key} orderId={out.orderId} basketId={out.basketId!} totalUsd={out.totalUsd!} />;
                 }
+                if (part.type === "tool-start_monthly_basket" && part.state === "output-available") {
+                  const out = part.output as MonthlyOutput;
+                  if (!out.ok || !out.approveUrl) return null;
+                  return (
+                    <div key={key} className="rounded-xl border border-zinc-200 bg-white p-4">
+                      <p className="mb-3 text-sm text-zinc-600">
+                        ${out.monthlyUsd} every month, billed by PayPal. Cancel anytime from the tracking page.
+                      </p>
+                      <a
+                        href={out.approveUrl}
+                        className="block rounded-full bg-[#ffc439] px-4 py-3 text-center font-medium text-zinc-900 hover:brightness-95"
+                      >
+                        Approve monthly basket with PayPal
+                      </a>
+                    </div>
+                  );
+                }
                 return null;
               })}
             </div>
@@ -121,10 +140,16 @@ export default function Home() {
           {awaitingConfirmation && (
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => send("Yes, create the PayPal checkout.")}
+                onClick={() => send("Looks good, send it once: create the PayPal checkout.")}
                 className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
               >
-                Looks good, go to payment
+                Send it once
+              </button>
+              <button
+                onClick={() => send("Looks good, send this basket every month.")}
+                className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
+              >
+                Every month
               </button>
               <button
                 onClick={() => setInput("Change the basket: ")}

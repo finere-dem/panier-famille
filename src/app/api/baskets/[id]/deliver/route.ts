@@ -6,7 +6,7 @@ import { advance, getBasket } from "@/lib/store";
 // transaction (shipment tracking), which strengthens seller protection against "item not received".
 export async function POST(req: NextRequest, ctx: RouteContext<"/api/baskets/[id]/deliver">) {
   const { id } = await ctx.params;
-  const b = getBasket(id);
+  const b = await getBasket(id);
   if (!b) return Response.json({ ok: false, error: "Not found" }, { status: 404 });
   if (!["paid", "preparing"].includes(b.status)) {
     return Response.json({ ok: false, error: `Basket is ${b.status}` }, { status: 409 });
@@ -29,6 +29,6 @@ export async function POST(req: NextRequest, ctx: RouteContext<"/api/baskets/[id
     paypalNote = `PayPal tracking not recorded: ${(e as Error).message.slice(0, 160)}`;
   }
 
-  advance(b, "delivered", { deliveryPhoto: photo, trackingNumber }, paypalNote);
+  await advance(b, "delivered", { deliveryPhoto: photo, trackingNumber }, paypalNote);
   return Response.json({ ok: true, trackingNumber, paypalNote });
 }

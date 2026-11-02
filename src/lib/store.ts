@@ -1,4 +1,7 @@
-// In-memory store for the prototype. Replaced by Postgres (Neon) before deployment.
+import { neon } from "@neondatabase/serverless";
+
+// Baskets live in Postgres (Neon) when DATABASE_URL is set, and in memory otherwise,
+// so the project runs locally with zero setup. Each basket is one JSONB document.
 
 export type BasketLine = { productId: string; name: string; unit: string; merchantId: string; quantity: number; unitPriceUsd: number };
 
@@ -22,26 +25,57 @@ export type Basket = {
   deliveryPhoto?: string; // data URL, resized client-side
   trackingNumber?: string;
   refundId?: string;
+  subscriptionId?: string;
+  subscriptionStatus?: string; // PayPal status: APPROVAL_PENDING, ACTIVE, CANCELLED...
+  nextBillingAt?: string;
 };
 
-const g = globalThis as unknown as { __baskets?: Map<string, Basket> };
-const baskets = (g.__baskets ??= new Map<string, Basket>());
+const sql = process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null;
 
-export function saveBasket(b: Basket) {
-  baskets.set(b.id, b);
+const g = globalThis as unknown as { __baskets?: Map<string, Basket>; __schema?: Promise<unknown> };
+const memory = (g.__baskets ??= new Map<string, Basket>());
+
+function ready() {
+  g.__schema ??= sql!`CREATE TABLE IF NOT EXISTS baskets (
+    id TEXT PRIMARY KEY,
+    paypal_order_id TEXT,
+    created_at TIMESTAMPTZ NOT NULL,
+    data JSONB NOT NULL
+  )`;
+  return g.__schema;
+}
+
+export async function saveBasket(b: Basket) {
+  if (!sql) {
+    memory.set(b.id, b);
+    return b;
+  }
+  await ready();
+  await sql`INSERT INTO baskets (id, paypal_order_id, created_at, data)
+    VALUES (${b.id}, ${b.paypalOrderId ?? null}, ${b.createdAt}, ${JSON.stringify(b)})
+    ON CONFLICT (id) DO UPDATE SET paypal_order_id = EXCLUDED.paypal_order_id, data = EXCLUDED.data`;
   return b;
 }
 
-export function getBasket(id: string) {
-  return baskets.get(id);
+export async function getBasket(id: string): Promise<Basket | undefined> {
+  if (!sql) return memory.get(id);
+  await ready();
+  const rows = await sql`SELECT data FROM baskets WHERE id = ${id}`;
+  return rows[0]?.data as Basket | undefined;
 }
 
-export function findBasketByOrder(orderId: string) {
-  return [...baskets.values()].find((b) => b.paypalOrderId === orderId);
+export async function findBasketByOrder(orderId: string): Promise<Basket | undefined> {
+  if (!sql) return [...memory.values()].find((b) => b.paypalOrderId === orderId);
+  await ready();
+  const rows = await sql`SELECT data FROM baskets WHERE paypal_order_id = ${orderId}`;
+  return rows[0]?.data as Basket | undefined;
 }
 
-export function listBaskets() {
-  return [...baskets.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+export async function listBaskets(): Promise<Basket[]> {
+  if (!sql) return [...memory.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  await ready();
+  const rows = await sql`SELECT data FROM baskets ORDER BY created_at DESC LIMIT 200`;
+  return rows.map((r) => r.data as Basket);
 }
 
 /** Move a basket to a new status and append it to the timeline. */

@@ -5,7 +5,7 @@ import { advance, getBasket } from "@/lib/store";
 // Sender asks for a refund (basket not delivered, or problem with it). Full refund through PayPal.
 export async function POST(req: NextRequest, ctx: RouteContext<"/api/baskets/[id]/refund">) {
   const { id } = await ctx.params;
-  const b = getBasket(id);
+  const b = await getBasket(id);
   if (!b) return Response.json({ ok: false, error: "Not found" }, { status: 404 });
   if (!b.captureId || b.status === "refunded") {
     return Response.json({ ok: false, error: `Basket cannot be refunded (${b.status})` }, { status: 409 });
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest, ctx: RouteContext<"/api/baskets/[id
       capture_id: b.captureId,
       note_to_payer: (reason || "Panier Famille refund").slice(0, 255),
     });
-    advance(b, "refunded", { refundId: refund.id }, `Refunded via PayPal (${refund.status})${reason ? `: ${reason}` : ""}`);
+    await advance(b, "refunded", { refundId: refund.id }, `Refunded via PayPal (${refund.status})${reason ? `: ${reason}` : ""}`);
     return Response.json({ ok: true, refundId: refund.id, status: refund.status });
   } catch (e) {
     return Response.json({ ok: false, error: (e as Error).message }, { status: 502 });

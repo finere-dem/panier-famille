@@ -28,6 +28,21 @@ export function BasketTracker({ params }: { params: Promise<{ id: string }> }) {
     return () => clearInterval(t);
   }, [load]);
 
+  // Coming back from PayPal approval (or opening a pending monthly basket): ask PayPal for the status.
+  const pendingMonthly = Boolean(basket?.subscriptionId) && !["ACTIVE", "CANCELLED"].includes(basket?.subscriptionStatus ?? "");
+  useEffect(() => {
+    if (!pendingMonthly) return;
+    fetch(`/api/baskets/${id}/subscription`).then(() => load());
+  }, [pendingMonthly, id, load]);
+
+  async function stopMonthly() {
+    if (!confirm("Stop the monthly basket? No further payments will be taken.")) return;
+    const res = await fetch(`/api/baskets/${id}/subscription`, { method: "DELETE" });
+    const data = await res.json();
+    if (!data.ok) setError(data.error);
+    load();
+  }
+
   async function refund() {
     const reason = prompt("What went wrong? (optional)") ?? "";
     setRefunding(true);
@@ -86,7 +101,24 @@ export function BasketTracker({ params }: { params: Promise<{ id: string }> }) {
             </ol>
           </section>
 
-          {["paid", "preparing", "delivered"].includes(basket.status) && (
+          {basket.subscriptionId && (
+            <section className="mb-6 rounded-xl border border-zinc-200 bg-white p-4 text-sm">
+              <h2 className="mb-1 font-medium">Monthly basket</h2>
+              <p className="text-zinc-600">
+                PayPal subscription {basket.subscriptionId} · {basket.subscriptionStatus ?? "pending"}
+                {basket.subscriptionStatus === "ACTIVE" && basket.nextBillingAt && (
+                  <> · next basket {new Date(basket.nextBillingAt).toLocaleDateString()}</>
+                )}
+              </p>
+              {basket.subscriptionStatus === "ACTIVE" && (
+                <button onClick={stopMonthly} className="mt-2 text-red-700 underline">
+                  Stop the monthly basket
+                </button>
+              )}
+            </section>
+          )}
+
+          {basket.captureId && ["paid", "preparing", "delivered"].includes(basket.status) && (
             <button onClick={refund} disabled={refunding} className="text-sm text-red-700 underline disabled:opacity-50">
               {refunding ? "Refunding…" : "Something went wrong? Get a full refund via PayPal"}
             </button>

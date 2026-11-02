@@ -12,6 +12,7 @@ import { z } from "zod";
 import { findMerchant, findProduct, merchants, products } from "@/lib/catalog";
 import { callPaypal, paypalTools } from "@/lib/paypal";
 import { advance, getBasket, saveBasket, type BasketLine } from "@/lib/store";
+import { startMonthly } from "@/lib/subscriptions";
 
 export const maxDuration = 60;
 
@@ -22,7 +23,8 @@ How you work:
 - Only use products returned by search_catalog. Never invent products or prices.
 - Build the basket with propose_basket. It computes the total from the catalog and refuses baskets over budget, so adjust quantities when it refuses.
 - Explain your choices in 2-4 short lines (why these items, what is left of the budget).
-- When the sender agrees, call create_checkout. You never pay yourself: the sender approves the payment with PayPal.
+- When the sender agrees to a one-time basket, call create_checkout. If they want it every month, call start_monthly_basket instead (a PayPal subscription billed monthly, cancellable anytime). You never pay yourself: the sender approves with PayPal.
+- When proposing a basket, end by asking whether to send it once or every month.
 - Prescription medicine is never sold directly: use the pharmacy voucher, which the pharmacist redeems against the recipient's own prescription.
 - Reply in the sender's language. Be warm and concise.`;
 
@@ -66,7 +68,7 @@ export async function POST(req: Request) {
           if (totalUsd > budgetUsd) {
             return { ok: false, error: `Total $${totalUsd} is over the $${budgetUsd} budget. Remove or reduce items.` };
           }
-          const basket = saveBasket({
+          const basket = await saveBasket({
             id: `bsk_${crypto.randomUUID().slice(0, 8)}`,
             recipientName,
             recipientCity,
@@ -92,7 +94,7 @@ export async function POST(req: Request) {
         description: "Create the PayPal order for an agreed basket. Returns the order the sender must approve with PayPal.",
         inputSchema: z.object({ basketId: z.string() }),
         execute: async ({ basketId }) => {
-          const basket = getBasket(basketId);
+          const basket = await getBasket(basketId);
           if (!basket) return { ok: false, error: "Basket not found" };
           const order = await callPaypal<{ id: string; status: string }>("create_order", {
             currencyCode: "USD",
@@ -106,8 +108,20 @@ export async function POST(req: Request) {
             })),
             notes: basket.note || undefined,
           });
-          advance(basket, "awaiting_payment", { paypalOrderId: order.id }, `PayPal order ${order.id}`);
+          await advance(basket, "awaiting_payment", { paypalOrderId: order.id }, `PayPal order ${order.id}`);
           return { ok: true, basketId, orderId: order.id, totalUsd: basket.totalUsd };
+        },
+      }),
+
+      start_monthly_basket: tool({
+        description:
+          "Turn an agreed basket into a monthly basket: creates a PayPal subscription billed every month at the basket price. Returns the PayPal approval link for the sender.",
+        inputSchema: z.object({ basketId: z.string() }),
+        execute: async ({ basketId }) => {
+          const basket = await getBasket(basketId);
+          if (!basket) return { ok: false, error: "Basket not found" };
+          const { subscriptionId, approveUrl } = await startMonthly(basket, new URL(req.url).origin);
+          return { ok: true, basketId, subscriptionId, approveUrl, monthlyUsd: basket.totalUsd };
         },
       }),
 
