@@ -31,10 +31,15 @@ How you work:
 export async function POST(req: Request) {
   const { messages }: { messages: UIMessage[] } = await req.json();
 
+  // Thinking blocks from earlier turns are signed against the exact history they came from.
+  // Once the client replays a turn slightly differently (e.g. after a failed tool call), the API
+  // rejects them, so earlier reasoning is dropped: the model does not need it across turns.
+  const history = messages.map((m) => ({ ...m, parts: m.parts.filter((p) => p.type !== "reasoning") }));
+
   const result = streamText({
     model: anthropic(process.env.AGENT_MODEL ?? "claude-haiku-5-5"),
     system: SYSTEM,
-    messages: await convertToModelMessages(messages),
+    messages: await convertToModelMessages(history),
     stopWhen: isStepCount(8),
     tools: {
       search_catalog: tool({
