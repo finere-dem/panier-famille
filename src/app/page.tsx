@@ -1,69 +1,165 @@
-import Image from "next/image";
+"use client";
+
+import { useChat } from "@ai-sdk/react";
+import { PayPalScriptProvider } from "@paypal/react-paypal-js";
+import { useState } from "react";
+import { Checkout } from "@/components/Checkout";
+import { Markdown } from "@/components/Markdown";
+import { Nav } from "@/components/Nav";
+
+type BasketOutput = {
+  ok: boolean;
+  error?: string;
+  basket?: {
+    id: string;
+    recipientName: string;
+    recipientCity: string;
+    budgetUsd: number;
+    totalUsd: number;
+    merchants: string[];
+    lines: { productId: string; name: string; unit: string; quantity: number; unitPriceUsd: number }[];
+  };
+};
+
+type CheckoutOutput = { ok: boolean; orderId?: string; basketId?: string; totalUsd?: number; error?: string };
+
+const EXAMPLE =
+  "Send my mother Fatoumata in Bamako what she needs for the month: rice, oil, sugar and her blood pressure medicine. Budget $80.";
 
 export default function Home() {
+  const [input, setInput] = useState("");
+  const { messages, sendMessage, status } = useChat();
+  const busy = status === "submitted" || status === "streaming";
+
+  // The agent proposed a basket in its last reply but no checkout exists yet: offer one-tap answers.
+  const last = messages.at(-1);
+  const awaitingConfirmation =
+    !busy &&
+    last?.role === "assistant" &&
+    last.parts.some((p) => p.type === "tool-propose_basket" && p.state === "output-available" && (p.output as BasketOutput).ok) &&
+    !last.parts.some((p) => p.type === "tool-create_checkout");
+
+  function send(text: string) {
+    if (!text.trim() || busy) return;
+    sendMessage({ text });
+    setInput("");
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <PayPalScriptProvider options={{ clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID!, currency: "USD" }}>
+      <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col bg-zinc-50 px-4 pb-32 pt-8 text-zinc-900">
+        <Nav />
+        <header className="mb-6">
+          <h1 className="text-2xl font-semibold">Send a basket, not cash</h1>
+          <p className="text-sm text-zinc-600">Tell the agent what your family needs. They get real goods from local merchants, you get proof of delivery.</p>
+        </header>
+
+        {messages.length === 0 && (
+          <button
+            onClick={() => send(EXAMPLE)}
+            className="mb-4 rounded-xl border border-dashed border-zinc-300 p-4 text-left text-sm text-zinc-700 hover:bg-white"
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+            Try it: “{EXAMPLE}”
+          </button>
+        )}
+
+        <div className="flex flex-col gap-4">
+          {messages.map((m) => (
+            <div key={m.id} className={m.role === "user" ? "self-end max-w-[85%]" : "self-start w-full"}>
+              {m.parts.map((part, i) => {
+                const key = `${m.id}-${i}`;
+                if (part.type === "text") {
+                  return m.role === "user" ? (
+                    <p key={key} className="whitespace-pre-wrap rounded-2xl bg-zinc-900 px-4 py-2 text-white">
+                      {part.text}
+                    </p>
+                  ) : (
+                    <div key={key} className="rounded-2xl bg-white px-4 py-3">
+                      <Markdown>{part.text}</Markdown>
+                    </div>
+                  );
+                }
+                if (part.type === "tool-propose_basket" && part.state === "output-available") {
+                  const out = part.output as BasketOutput;
+                  if (!out.ok || !out.basket) return null;
+                  const b = out.basket;
+                  return (
+                    <div key={key} className="my-2 rounded-xl border border-zinc-200 bg-white p-4 text-sm">
+                      <p className="mb-2 font-medium">
+                        Basket for {b.recipientName}, {b.recipientCity}
+                      </p>
+                      <ul className="mb-2 space-y-1">
+                        {b.lines.map((l) => (
+                          <li key={l.productId} className="flex justify-between gap-4">
+                            <span>
+                              {l.quantity} × {l.name} <span className="text-zinc-500">({l.unit})</span>
+                            </span>
+                            <span>${l.quantity * l.unitPriceUsd}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="flex justify-between border-t pt-2 font-medium">
+                        <span>Total</span>
+                        <span>
+                          ${b.totalUsd} <span className="font-normal text-zinc-500">/ ${b.budgetUsd} budget</span>
+                        </span>
+                      </p>
+                      <p className="mt-1 text-xs text-zinc-500">From: {b.merchants.join(", ")}</p>
+                    </div>
+                  );
+                }
+                if (part.type === "tool-create_checkout" && part.state === "output-available") {
+                  const out = part.output as CheckoutOutput;
+                  if (!out.ok || !out.orderId) return null;
+                  return <Checkout key={key} orderId={out.orderId} basketId={out.basketId!} totalUsd={out.totalUsd!} />;
+                }
+                return null;
+              })}
+            </div>
+          ))}
+          {busy && <p className="text-sm text-zinc-500">Panier Famille is working…</p>}
+          {awaitingConfirmation && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => send("Yes, create the PayPal checkout.")}
+                className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
+              >
+                Looks good, go to payment
+              </button>
+              <button
+                onClick={() => setInput("Change the basket: ")}
+                className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm hover:bg-zinc-100"
+              >
+                Change something
+              </button>
+            </div>
+          )}
+        </div>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            send(input);
+          }}
+          className="fixed inset-x-0 bottom-0 mx-auto w-full max-w-xl bg-zinc-50 px-4 pb-6 pt-2"
+        >
+          <div className="flex gap-2">
+            <input
+              value={input}
+              onChange={(e) => setInput(e.currentTarget.value)}
+              placeholder="Who is the basket for, what do they need, what budget?"
+              className="min-w-0 flex-1 rounded-full border border-zinc-300 bg-white px-5 py-3 shadow-sm outline-none focus:border-zinc-500"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+            <button
+              type="submit"
+              disabled={busy || !input.trim()}
+              className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-medium text-white disabled:opacity-40"
+            >
+              Send
+            </button>
+          </div>
+        </form>
       </main>
-    </div>
+    </PayPalScriptProvider>
   );
 }
