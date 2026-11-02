@@ -48,7 +48,7 @@ export default function Home() {
   }
 
   return (
-    <PayPalScriptProvider options={{ clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID!, currency: "USD" }}>
+    <PayPalScriptProvider options={{ clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID!, currency: "USD" }} deferLoading>
       <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col bg-zinc-50 px-4 pb-32 pt-8 text-zinc-900">
         <Nav />
         <header className="mb-6">
