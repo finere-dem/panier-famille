@@ -69,14 +69,14 @@ export function BasketTracker({ params }: { params: Promise<{ id: string }> }) {
       {!basket && !missing && <p className="text-muted">Loading basket…</p>}
       {basket && (
         <>
-          <p className="text-sm font-medium uppercase tracking-wide text-clay">{STATUS_LABEL[basket.status]}</p>
+          <p className="text-sm font-medium uppercase tracking-wide text-indigo">{STATUS_LABEL[basket.status]}</p>
           <h1 className="font-display text-3xl font-semibold">Basket for {basket.recipientName}</h1>
           <p className="mb-6 text-muted">
             {basket.recipientCity} · ${basket.totalUsd}
           </p>
 
           {basket.status === "refunded" ? (
-            <div className="mb-6 rounded-2xl border border-sand bg-paper p-4 text-sm">
+            <div className="mb-6 rounded-2xl border border-line bg-paper p-4 text-sm">
               This basket was refunded in full through PayPal.
             </div>
           ) : (
@@ -85,7 +85,7 @@ export function BasketTracker({ params }: { params: Promise<{ id: string }> }) {
                 const done = reached(s.status);
                 return (
                   <li key={s.status}>
-                    <div className={`h-1.5 rounded-full ${done ? "bg-leaf" : "bg-sand"}`} />
+                    <div className={`h-1.5 rounded-full ${done ? "bg-leaf" : "bg-line"}`} />
                     <p className={`mt-2 text-sm ${done ? "font-medium text-leaf" : "text-muted"}`}>{s.label}</p>
                   </li>
                 );
@@ -94,7 +94,7 @@ export function BasketTracker({ params }: { params: Promise<{ id: string }> }) {
           )}
 
           {basket.deliveryPhoto && (
-            <figure className="mb-6 overflow-hidden rounded-2xl border border-sand bg-paper shadow-sm">
+            <figure className="mb-6 overflow-hidden rounded-2xl border border-line bg-paper shadow-sm">
               {/* eslint-disable-next-line @next/next/no-img-element -- data URL proof photo */}
               <img src={basket.deliveryPhoto} alt={`Delivery to ${basket.recipientName}`} className="w-full" />
               <figcaption className="flex items-center justify-between gap-3 p-4 text-sm">
@@ -109,7 +109,7 @@ export function BasketTracker({ params }: { params: Promise<{ id: string }> }) {
           </div>
 
           {basket.subscriptionId && (
-            <section className="mb-6 rounded-2xl border border-sand bg-paper p-5 text-sm">
+            <section className="mb-6 rounded-2xl border border-line bg-paper p-5 text-sm">
               <h2 className="font-display text-lg font-semibold">Monthly basket</h2>
               <p className="mt-1 text-muted">
                 {basket.subscriptionStatus === "ACTIVE"
@@ -118,7 +118,7 @@ export function BasketTracker({ params }: { params: Promise<{ id: string }> }) {
               </p>
               <p className="text-xs text-muted">PayPal subscription {basket.subscriptionId}</p>
               {basket.subscriptionStatus === "ACTIVE" && (
-                <button onClick={stopMonthly} className="mt-3 text-clay-dark underline">
+                <button onClick={stopMonthly} className="mt-3 text-indigo-dark underline">
                   Stop the monthly basket
                 </button>
               )}
@@ -127,10 +127,10 @@ export function BasketTracker({ params }: { params: Promise<{ id: string }> }) {
 
           <section className="mb-8">
             <h2 className="mb-3 font-display text-lg font-semibold">Timeline</h2>
-            <ol className="space-y-4 border-l-2 border-sand pl-5">
+            <ol className="space-y-4 border-l-2 border-line pl-5">
               {basket.events.map((e, i) => (
                 <li key={i} className="relative text-sm">
-                  <span className="absolute -left-[27px] top-1 h-3 w-3 rounded-full border-2 border-cream bg-ochre" />
+                  <span className="absolute -left-[27px] top-1 h-3 w-3 rounded-full border-2 border-canvas bg-saffron" />
                   <p>
                     <span className="font-medium">{STATUS_LABEL[e.status]}</span>{" "}
                     <span className="text-muted">· {new Date(e.at).toLocaleString()}</span>
@@ -142,11 +142,11 @@ export function BasketTracker({ params }: { params: Promise<{ id: string }> }) {
           </section>
 
           {basket.captureId && ["paid", "preparing", "delivered"].includes(basket.status) && (
-            <button onClick={refund} disabled={refunding} className="text-sm text-clay-dark underline disabled:opacity-50">
+            <button onClick={refund} disabled={refunding} className="text-sm text-indigo-dark underline disabled:opacity-50">
               {refunding ? "Refunding…" : "Something went wrong? Get a full refund via PayPal"}
             </button>
           )}
-          {error && <p className="mt-2 text-sm text-clay-dark">{error}</p>}
+          {error && <p className="mt-2 text-sm text-red-700">{error}</p>}
         </>
       )}
     </main>

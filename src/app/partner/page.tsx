@@ -10,12 +10,12 @@ import { STATUS_LABEL, STATUS_PILL, type BasketView } from "@/lib/types";
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 const gridTheme = themeQuartz.withParams({
-  accentColor: "#b4532a",
-  backgroundColor: "#fffdf8",
-  foregroundColor: "#241c17",
-  headerBackgroundColor: "#f3e9d8",
-  borderColor: "#ecdfca",
-  rowHoverColor: "#faf5ec",
+  accentColor: "#24338a",
+  backgroundColor: "#ffffff",
+  foregroundColor: "#141a33",
+  headerBackgroundColor: "#eef1fa",
+  borderColor: "#e1e5f2",
+  rowHoverColor: "#f6f7fc",
   fontFamily: "var(--font-geist-sans)",
   headerFontWeight: 600,
   wrapperBorderRadius: 16,
@@ -114,18 +114,18 @@ export default function PartnerPage() {
           if (busy === b.id) return <span className="text-muted">Working…</span>;
           if (b.status === "paid")
             return (
-              <button className="rounded-full bg-ink px-3 py-1 text-xs font-semibold text-cream" onClick={() => startPreparing(b.id)}>
+              <button className="rounded-full bg-ink px-3 py-1 text-xs font-semibold text-canvas" onClick={() => startPreparing(b.id)}>
                 Start preparing
               </button>
             );
           if (b.status === "preparing")
             return (
-              <button className="rounded-full bg-leaf px-3 py-1 text-xs font-semibold text-cream" onClick={() => askPhoto(b.id)}>
+              <button className="rounded-full bg-leaf px-3 py-1 text-xs font-semibold text-canvas" onClick={() => askPhoto(b.id)}>
                 Confirm delivery (photo)
               </button>
             );
           return (
-            <Link href={`/baskets/${b.id}`} className="text-clay underline">
+            <Link href={`/baskets/${b.id}`} className="text-indigo underline">
               View
             </Link>
           );
@@ -138,7 +138,7 @@ export default function PartnerPage() {
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-4 pb-16">
       <Nav />
-      <p className="text-sm font-medium uppercase tracking-wide text-clay">Bamako partner</p>
+      <p className="text-sm font-medium uppercase tracking-wide text-indigo">Bamako partner</p>
       <h1 className="font-display text-3xl font-semibold">Baskets to prepare and deliver</h1>
       <p className="mb-6 mt-1 max-w-2xl text-muted">
         Every paid basket lands here. Delivery is confirmed with a photo, shared with the sender and recorded on the PayPal
@@ -150,7 +150,7 @@ export default function PartnerPage() {
           { label: "To deliver", value: rows.filter((r) => r.status === "preparing").length },
           { label: "Delivered", value: rows.filter((r) => r.status === "delivered").length },
         ].map((s) => (
-          <div key={s.label} className="rounded-2xl border border-sand bg-paper p-4">
+          <div key={s.label} className="rounded-2xl border border-line bg-paper p-4">
             <dt className="text-sm text-muted">{s.label}</dt>
             <dd className="font-display text-3xl font-semibold">{s.value}</dd>
           </div>

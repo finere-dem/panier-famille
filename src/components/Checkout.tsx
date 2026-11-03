@@ -32,7 +32,7 @@ export function Checkout({ orderId, basketId, totalUsd }: { orderId: string; bas
         <p className="mt-1 text-sm">The merchants in Bamako have been notified. You will get a photo when it is delivered.</p>
         <Link
           href={`/baskets/${basketId}`}
-          className="mt-4 inline-block rounded-full bg-leaf px-4 py-2 text-sm font-semibold text-cream hover:opacity-90"
+          className="mt-4 inline-block rounded-full bg-leaf px-4 py-2 text-sm font-semibold text-canvas hover:opacity-90"
         >
           Track this basket
         </Link>
@@ -41,11 +41,11 @@ export function Checkout({ orderId, basketId, totalUsd }: { orderId: string; bas
   }
 
   return (
-    <div className="rounded-2xl border border-sand bg-paper p-5 shadow-sm">
+    <div className="rounded-2xl border border-line bg-paper p-5 shadow-sm">
       <p className="font-display text-lg font-semibold">Approve ${totalUsd} with PayPal</p>
       <p className="mb-4 mt-1 text-sm text-muted">Nothing is charged until you confirm. Covered by PayPal Buyer Protection.</p>
       {isRejected && (
-        <p className="mb-2 text-sm text-clay-dark">
+        <p className="mb-2 text-sm text-red-700">
           PayPal could not be loaded (network issue).{" "}
           <button
             className="font-medium underline"
@@ -65,7 +65,7 @@ export function Checkout({ orderId, basketId, totalUsd }: { orderId: string; bas
         }}
       />
       {state === "error" && (
-        <p className="mt-2 text-sm text-clay-dark">
+        <p className="mt-2 text-sm text-red-700">
           Payment not confirmed: {error}.{" "}
           <button onClick={capture} className="font-medium underline">
             Check again

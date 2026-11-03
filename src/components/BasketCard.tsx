@@ -17,7 +17,7 @@ export function BasketCard({
 }) {
   const used = budgetUsd ? Math.min(100, Math.round((totalUsd / budgetUsd) * 100)) : 0;
   return (
-    <div className="rounded-2xl border border-sand bg-paper p-5 shadow-sm">
+    <div className="rounded-2xl border border-line bg-paper p-5 shadow-sm">
       <p className="mb-3 font-display text-lg font-semibold">{title}</p>
       <ul className="mb-4 space-y-2 text-sm">
         {lines.map((l) => (
@@ -30,14 +30,14 @@ export function BasketCard({
           </li>
         ))}
       </ul>
-      <div className="flex items-baseline justify-between border-t border-sand pt-3">
+      <div className="flex items-baseline justify-between border-t border-line pt-3">
         <span className="font-medium">Total</span>
         <span className="font-display text-xl font-semibold tabular-nums">${totalUsd}</span>
       </div>
       {budgetUsd ? (
         <div className="mt-3">
-          <div className="h-2 overflow-hidden rounded-full bg-sand">
-            <div className="h-full rounded-full bg-ochre" style={{ width: `${used}%` }} />
+          <div className="h-2 overflow-hidden rounded-full bg-line">
+            <div className="h-full rounded-full bg-saffron" style={{ width: `${used}%` }} />
           </div>
           <p className="mt-1 text-xs text-muted">
             ${totalUsd} of your ${budgetUsd} budget · ${budgetUsd - totalUsd} left

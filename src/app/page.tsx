@@ -64,8 +64,9 @@ export default function Home() {
 
         {messages.length === 0 && (
           <section className="mb-8">
-            <h1 className="font-display text-4xl font-semibold leading-tight">
-              Send a basket, <span className="text-clay">not cash.</span>
+            <h1 className="font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+              Send a basket,{" "}
+              <span className="text-indigo underline decoration-saffron decoration-[5px] underline-offset-[6px]">not cash.</span>
             </h1>
             <p className="mt-3 text-muted">
               Tell our agent what your family back home needs. Local merchants deliver real goods, you get a photo when it
@@ -74,10 +75,14 @@ export default function Home() {
 
             <ol className="mt-6 grid gap-3 sm:grid-cols-3">
               {STEPS.map((s, i) => (
-                <li key={s.title} className="rounded-2xl border border-sand bg-paper p-4">
-                  <span className="font-display text-2xl font-semibold text-ochre">{i + 1}</span>
-                  <p className="mt-1 font-medium">{s.title}</p>
-                  <p className="text-sm text-muted">{s.text}</p>
+                <li key={s.title} className="flex gap-3 rounded-2xl border border-line bg-paper p-4 sm:flex-col sm:gap-2">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-saffron font-display font-bold text-ink">
+                    {i + 1}
+                  </span>
+                  <div>
+                    <p className="font-medium">{s.title}</p>
+                    <p className="text-sm text-muted">{s.text}</p>
+                  </div>
                 </li>
               ))}
             </ol>
@@ -88,7 +93,7 @@ export default function Home() {
                 <button
                   key={ex}
                   onClick={() => send(ex)}
-                  className="rounded-2xl border border-dashed border-clay/40 bg-paper px-4 py-3 text-left text-sm hover:border-clay hover:bg-white"
+                  className="rounded-2xl border border-dashed border-indigo/40 bg-paper px-4 py-3 text-left text-sm hover:border-indigo hover:bg-white"
                 >
                   “{ex}”
                 </button>
@@ -106,7 +111,7 @@ export default function Home() {
                   const key = `${m.id}-${i}`;
                   if (part.type === "text") {
                     return m.role === "user" ? (
-                      <p key={key} className="whitespace-pre-wrap rounded-2xl rounded-br-sm bg-ink px-4 py-3 text-cream">
+                      <p key={key} className="whitespace-pre-wrap rounded-2xl rounded-br-sm bg-ink px-4 py-3 text-canvas">
                         {part.text}
                       </p>
                     ) : (
@@ -139,7 +144,7 @@ export default function Home() {
                     const out = part.output as MonthlyOutput;
                     if (!out.ok || !out.approveUrl) return null;
                     return (
-                      <div key={key} className="rounded-2xl border border-sand bg-paper p-5 shadow-sm">
+                      <div key={key} className="rounded-2xl border border-line bg-paper p-5 shadow-sm">
                         <p className="font-display text-lg font-semibold">Monthly basket · ${out.monthlyUsd}/month</p>
                         <p className="mb-4 mt-1 text-sm text-muted">Billed by PayPal each month. Stop it anytime from the tracking page.</p>
                         <a
@@ -168,19 +173,19 @@ export default function Home() {
             <div className="flex flex-wrap gap-2 pl-10">
               <button
                 onClick={() => send("Looks good, send it once: create the PayPal checkout.")}
-                className="rounded-full bg-clay px-4 py-2 text-sm font-medium text-cream hover:bg-clay-dark"
+                className="rounded-full bg-indigo px-4 py-2 text-sm font-medium text-canvas hover:bg-indigo-dark"
               >
                 Send it once
               </button>
               <button
                 onClick={() => send("Looks good, send this basket every month.")}
-                className="rounded-full bg-ink px-4 py-2 text-sm font-medium text-cream hover:opacity-90"
+                className="rounded-full bg-ink px-4 py-2 text-sm font-medium text-canvas hover:opacity-90"
               >
                 Every month
               </button>
               <button
                 onClick={() => setInput("Change the basket: ")}
-                className="rounded-full border border-sand bg-paper px-4 py-2 text-sm hover:border-clay"
+                className="rounded-full border border-line bg-paper px-4 py-2 text-sm hover:border-indigo"
               >
                 Change something
               </button>
@@ -193,11 +198,11 @@ export default function Home() {
             e.preventDefault();
             send(input);
           }}
-          className="fixed inset-x-0 bottom-0 bg-gradient-to-t from-cream via-cream to-cream/0 pt-6 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+          className="fixed inset-x-0 bottom-0 bg-gradient-to-t from-canvas via-canvas to-canvas/0 pt-6 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
         >
           {/* One pill composer: the send button sits inside the field instead of floating next to it. */}
           <div className="mx-auto w-full max-w-xl px-4">
-            <div className="flex items-center gap-2 rounded-full border border-sand bg-paper py-1.5 pl-5 pr-1.5 shadow-sm focus-within:border-clay">
+            <div className="flex items-center gap-2 rounded-full border border-line bg-paper py-1.5 pl-5 pr-1.5 shadow-sm focus-within:border-indigo">
               <input
                 value={input}
                 onChange={(e) => setInput(e.currentTarget.value)}
@@ -208,7 +213,7 @@ export default function Home() {
                 type="submit"
                 aria-label="Send"
                 disabled={busy || !input.trim()}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-clay text-cream transition-colors hover:bg-clay-dark disabled:bg-sand disabled:text-muted"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-indigo text-canvas transition-colors hover:bg-indigo-dark disabled:bg-line disabled:text-muted"
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M12 19V5M5 12l7-7 7 7" />
