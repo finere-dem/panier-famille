@@ -46,7 +46,7 @@ The agent only gets the tools it needs. Capture, delivery and refunds happen in 
 
 ## Try it
 
-Open https://panier-famille.vercel.app and pick one of the example requests, or write your own. Everything runs in the **PayPal sandbox**: no real money moves. To approve the payment, log in with any PayPal sandbox personal account.
+Open https://panier-famille.vercel.app and pick one of the example requests, or write your own. Everything runs in the **PayPal sandbox**: no real money moves. To approve the payment, log in with the sandbox buyer account given in the Devpost testing instructions (or any PayPal sandbox personal account of your own).
 
 Then open the **Partner** page to play the Bamako partner: start preparing the basket and confirm delivery with any photo. Go back to the tracking page to see the photo, the timeline, and to try a refund.
 
