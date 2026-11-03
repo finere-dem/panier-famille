@@ -3,9 +3,10 @@
 import { useChat } from "@ai-sdk/react";
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { useState } from "react";
+import { BasketCard } from "@/components/BasketCard";
 import { Checkout } from "@/components/Checkout";
 import { Markdown } from "@/components/Markdown";
-import { Nav } from "@/components/Nav";
+import { Logo, Nav } from "@/components/Nav";
 
 type BasketOutput = {
   ok: boolean;
@@ -25,8 +26,17 @@ type CheckoutOutput = { ok: boolean; orderId?: string; basketId?: string; totalU
 
 type MonthlyOutput = { ok: boolean; approveUrl?: string; monthlyUsd?: number; error?: string };
 
-const EXAMPLE =
-  "Send my mother Fatoumata in Bamako what she needs for the month: rice, oil, sugar and her blood pressure medicine. Budget $80.";
+const EXAMPLES = [
+  "Send my mother Fatoumata in Bamako what she needs for the month: rice, oil, sugar and her blood pressure medicine. Budget $80.",
+  "My sister Aminata just had a baby in Bamako. Diapers, milk and soap, around $50.",
+  "Cooking gas and electricity credit for my father Seydou, $30.",
+];
+
+const STEPS = [
+  { title: "Tell the agent", text: "Who it's for, what they need, your budget." },
+  { title: "Approve with PayPal", text: "The agent never pays on its own. You confirm." },
+  { title: "Delivered, with proof", text: "A local merchant delivers and sends a photo." },
+];
 
 export default function Home() {
   const [input, setInput] = useState("");
@@ -49,111 +59,128 @@ export default function Home() {
 
   return (
     <PayPalScriptProvider options={{ clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID!, currency: "USD" }} deferLoading>
-      <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col bg-zinc-50 px-4 pb-32 pt-8 text-zinc-900">
+      <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col px-4 pb-36">
         <Nav />
-        <header className="mb-6">
-          <h1 className="text-2xl font-semibold">Send a basket, not cash</h1>
-          <p className="text-sm text-zinc-600">Tell the agent what your family needs. They get real goods from local merchants, you get proof of delivery.</p>
-        </header>
 
         {messages.length === 0 && (
-          <button
-            onClick={() => send(EXAMPLE)}
-            className="mb-4 rounded-xl border border-dashed border-zinc-300 p-4 text-left text-sm text-zinc-700 hover:bg-white"
-          >
-            Try it: “{EXAMPLE}”
-          </button>
+          <section className="mb-8">
+            <h1 className="font-display text-4xl font-semibold leading-tight">
+              Send a basket, <span className="text-clay">not cash.</span>
+            </h1>
+            <p className="mt-3 text-muted">
+              Tell our agent what your family back home needs. Local merchants deliver real goods, you get a photo when it
+              arrives, and PayPal protects every dollar.
+            </p>
+
+            <ol className="mt-6 grid gap-3 sm:grid-cols-3">
+              {STEPS.map((s, i) => (
+                <li key={s.title} className="rounded-2xl border border-sand bg-paper p-4">
+                  <span className="font-display text-2xl font-semibold text-ochre">{i + 1}</span>
+                  <p className="mt-1 font-medium">{s.title}</p>
+                  <p className="text-sm text-muted">{s.text}</p>
+                </li>
+              ))}
+            </ol>
+
+            <p className="mb-2 mt-8 text-sm font-medium text-muted">Try one of these</p>
+            <div className="flex flex-col gap-2">
+              {EXAMPLES.map((ex) => (
+                <button
+                  key={ex}
+                  onClick={() => send(ex)}
+                  className="rounded-2xl border border-dashed border-clay/40 bg-paper px-4 py-3 text-left text-sm hover:border-clay hover:bg-white"
+                >
+                  “{ex}”
+                </button>
+              ))}
+            </div>
+          </section>
         )}
 
         <div className="flex flex-col gap-4">
           {messages.map((m) => (
-            <div key={m.id} className={m.role === "user" ? "self-end max-w-[85%]" : "self-start w-full"}>
-              {m.parts.map((part, i) => {
-                const key = `${m.id}-${i}`;
-                if (part.type === "text") {
-                  return m.role === "user" ? (
-                    <p key={key} className="whitespace-pre-wrap rounded-2xl bg-zinc-900 px-4 py-2 text-white">
-                      {part.text}
-                    </p>
-                  ) : (
-                    <div key={key} className="rounded-2xl bg-white px-4 py-3">
-                      <Markdown>{part.text}</Markdown>
-                    </div>
-                  );
-                }
-                if (part.type === "tool-propose_basket" && part.state === "output-available") {
-                  const out = part.output as BasketOutput;
-                  if (!out.ok || !out.basket) return null;
-                  const b = out.basket;
-                  return (
-                    <div key={key} className="my-2 rounded-xl border border-zinc-200 bg-white p-4 text-sm">
-                      <p className="mb-2 font-medium">
-                        Basket for {b.recipientName}, {b.recipientCity}
+            <div key={m.id} className={m.role === "user" ? "max-w-[85%] self-end" : "flex w-full gap-3 self-start"}>
+              {m.role === "assistant" && <Logo className="mt-1 h-7 w-7 shrink-0" />}
+              <div className={m.role === "assistant" ? "flex min-w-0 flex-1 flex-col gap-3" : ""}>
+                {m.parts.map((part, i) => {
+                  const key = `${m.id}-${i}`;
+                  if (part.type === "text") {
+                    return m.role === "user" ? (
+                      <p key={key} className="whitespace-pre-wrap rounded-2xl rounded-br-sm bg-ink px-4 py-3 text-cream">
+                        {part.text}
                       </p>
-                      <ul className="mb-2 space-y-1">
-                        {b.lines.map((l) => (
-                          <li key={l.productId} className="flex justify-between gap-4">
-                            <span>
-                              {l.quantity} × {l.name} <span className="text-zinc-500">({l.unit})</span>
-                            </span>
-                            <span>${l.quantity * l.unitPriceUsd}</span>
-                          </li>
-                        ))}
-                      </ul>
-                      <p className="flex justify-between border-t pt-2 font-medium">
-                        <span>Total</span>
-                        <span>
-                          ${b.totalUsd} <span className="font-normal text-zinc-500">/ ${b.budgetUsd} budget</span>
-                        </span>
-                      </p>
-                      <p className="mt-1 text-xs text-zinc-500">From: {b.merchants.join(", ")}</p>
-                    </div>
-                  );
-                }
-                if (part.type === "tool-create_checkout" && part.state === "output-available") {
-                  const out = part.output as CheckoutOutput;
-                  if (!out.ok || !out.orderId) return null;
-                  return <Checkout key={key} orderId={out.orderId} basketId={out.basketId!} totalUsd={out.totalUsd!} />;
-                }
-                if (part.type === "tool-start_monthly_basket" && part.state === "output-available") {
-                  const out = part.output as MonthlyOutput;
-                  if (!out.ok || !out.approveUrl) return null;
-                  return (
-                    <div key={key} className="rounded-xl border border-zinc-200 bg-white p-4">
-                      <p className="mb-3 text-sm text-zinc-600">
-                        ${out.monthlyUsd} every month, billed by PayPal. Cancel anytime from the tracking page.
-                      </p>
-                      <a
-                        href={out.approveUrl}
-                        className="block rounded-full bg-[#ffc439] px-4 py-3 text-center font-medium text-zinc-900 hover:brightness-95"
-                      >
-                        Approve monthly basket with PayPal
-                      </a>
-                    </div>
-                  );
-                }
-                return null;
-              })}
+                    ) : (
+                      <div key={key} className="rounded-2xl rounded-tl-sm bg-paper px-4 py-3 shadow-sm">
+                        <Markdown>{part.text}</Markdown>
+                      </div>
+                    );
+                  }
+                  if (part.type === "tool-propose_basket" && part.state === "output-available") {
+                    const out = part.output as BasketOutput;
+                    if (!out.ok || !out.basket) return null;
+                    const b = out.basket;
+                    return (
+                      <BasketCard
+                        key={key}
+                        title={`Basket for ${b.recipientName}, ${b.recipientCity}`}
+                        lines={b.lines}
+                        totalUsd={b.totalUsd}
+                        budgetUsd={b.budgetUsd}
+                        merchants={b.merchants}
+                      />
+                    );
+                  }
+                  if (part.type === "tool-create_checkout" && part.state === "output-available") {
+                    const out = part.output as CheckoutOutput;
+                    if (!out.ok || !out.orderId) return null;
+                    return <Checkout key={key} orderId={out.orderId} basketId={out.basketId!} totalUsd={out.totalUsd!} />;
+                  }
+                  if (part.type === "tool-start_monthly_basket" && part.state === "output-available") {
+                    const out = part.output as MonthlyOutput;
+                    if (!out.ok || !out.approveUrl) return null;
+                    return (
+                      <div key={key} className="rounded-2xl border border-sand bg-paper p-5 shadow-sm">
+                        <p className="font-display text-lg font-semibold">Monthly basket · ${out.monthlyUsd}/month</p>
+                        <p className="mb-4 mt-1 text-sm text-muted">Billed by PayPal each month. Stop it anytime from the tracking page.</p>
+                        <a
+                          href={out.approveUrl}
+                          className="block rounded-full bg-[#ffc439] px-4 py-3 text-center font-semibold text-[#142c8e] hover:brightness-95"
+                        >
+                          Approve with PayPal
+                        </a>
+                      </div>
+                    );
+                  }
+                  return null;
+                })}
+              </div>
             </div>
           ))}
-          {busy && <p className="text-sm text-zinc-500">Panier Famille is working…</p>}
+
+          {busy && (
+            <div className="flex items-center gap-3 text-sm text-muted">
+              <Logo className="h-7 w-7 animate-pulse" />
+              Finding the best basket…
+            </div>
+          )}
+
           {awaitingConfirmation && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 pl-10">
               <button
                 onClick={() => send("Looks good, send it once: create the PayPal checkout.")}
-                className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
+                className="rounded-full bg-clay px-4 py-2 text-sm font-medium text-cream hover:bg-clay-dark"
               >
                 Send it once
               </button>
               <button
                 onClick={() => send("Looks good, send this basket every month.")}
-                className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
+                className="rounded-full bg-ink px-4 py-2 text-sm font-medium text-cream hover:opacity-90"
               >
                 Every month
               </button>
               <button
                 onClick={() => setInput("Change the basket: ")}
-                className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm hover:bg-zinc-100"
+                className="rounded-full border border-sand bg-paper px-4 py-2 text-sm hover:border-clay"
               >
                 Change something
               </button>
@@ -166,19 +193,19 @@ export default function Home() {
             e.preventDefault();
             send(input);
           }}
-          className="fixed inset-x-0 bottom-0 mx-auto w-full max-w-xl bg-zinc-50 px-4 pb-6 pt-2"
+          className="fixed inset-x-0 bottom-0 bg-gradient-to-t from-cream via-cream to-cream/0 pb-5 pt-6"
         >
-          <div className="flex gap-2">
+          <div className="mx-auto flex w-full max-w-xl gap-2 px-4">
             <input
               value={input}
               onChange={(e) => setInput(e.currentTarget.value)}
-              placeholder="Who is the basket for, what do they need, what budget?"
-              className="min-w-0 flex-1 rounded-full border border-zinc-300 bg-white px-5 py-3 shadow-sm outline-none focus:border-zinc-500"
+              placeholder="Who is it for, what do they need, what budget?"
+              className="min-w-0 flex-1 rounded-full border border-sand bg-paper px-5 py-3 shadow-sm outline-none placeholder:text-muted/70 focus:border-clay"
             />
             <button
               type="submit"
               disabled={busy || !input.trim()}
-              className="rounded-full bg-zinc-900 px-5 py-3 text-sm font-medium text-white disabled:opacity-40"
+              className="rounded-full bg-clay px-5 py-3 text-sm font-semibold text-cream disabled:opacity-40"
             >
               Send
             </button>

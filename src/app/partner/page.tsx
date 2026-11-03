@@ -1,13 +1,25 @@
 "use client";
 
-import { AllCommunityModule, ModuleRegistry, type ColDef, type ICellRendererParams } from "ag-grid-community";
+import { AllCommunityModule, ModuleRegistry, themeQuartz, type ColDef, type ICellRendererParams } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Nav } from "@/components/Nav";
-import { STATUS_LABEL, type BasketView } from "@/lib/types";
+import { STATUS_LABEL, STATUS_PILL, type BasketView } from "@/lib/types";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
+
+const gridTheme = themeQuartz.withParams({
+  accentColor: "#b4532a",
+  backgroundColor: "#fffdf8",
+  foregroundColor: "#241c17",
+  headerBackgroundColor: "#f3e9d8",
+  borderColor: "#ecdfca",
+  rowHoverColor: "#faf5ec",
+  fontFamily: "var(--font-geist-sans)",
+  headerFontWeight: 600,
+  wrapperBorderRadius: 16,
+});
 
 /** Shrink the phone photo before upload: proof only needs to be readable. */
 async function resizePhoto(file: File, maxSide = 900): Promise<string> {
@@ -80,8 +92,11 @@ export default function PartnerPage() {
         headerName: "Status",
         field: "status",
         width: 140,
-        valueFormatter: (p) => STATUS_LABEL[p.value as BasketView["status"]],
         filter: true,
+        cellRenderer: (p: ICellRendererParams<BasketView>) => {
+          const s = p.value as BasketView["status"];
+          return <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_PILL[s]}`}>{STATUS_LABEL[s]}</span>;
+        },
       },
       {
         headerName: "Paid",
@@ -96,21 +111,21 @@ export default function PartnerPage() {
         sortable: false,
         cellRenderer: (p: ICellRendererParams<BasketView>) => {
           const b = p.data!;
-          if (busy === b.id) return <span className="text-zinc-500">Working…</span>;
+          if (busy === b.id) return <span className="text-muted">Working…</span>;
           if (b.status === "paid")
             return (
-              <button className="font-medium text-blue-700 underline" onClick={() => startPreparing(b.id)}>
+              <button className="rounded-full bg-ink px-3 py-1 text-xs font-semibold text-cream" onClick={() => startPreparing(b.id)}>
                 Start preparing
               </button>
             );
           if (b.status === "preparing")
             return (
-              <button className="font-medium text-emerald-700 underline" onClick={() => askPhoto(b.id)}>
+              <button className="rounded-full bg-leaf px-3 py-1 text-xs font-semibold text-cream" onClick={() => askPhoto(b.id)}>
                 Confirm delivery (photo)
               </button>
             );
           return (
-            <Link href={`/baskets/${b.id}`} className="text-zinc-600 underline">
+            <Link href={`/baskets/${b.id}`} className="text-clay underline">
               View
             </Link>
           );
@@ -121,14 +136,29 @@ export default function PartnerPage() {
   );
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-6xl bg-zinc-50 px-4 pb-16 pt-8 text-zinc-900">
+    <main className="mx-auto min-h-screen w-full max-w-6xl px-4 pb-16">
       <Nav />
-      <h1 className="text-2xl font-semibold">Partner dashboard · Bamako</h1>
-      <p className="mb-4 text-sm text-zinc-600">
-        Paid baskets to prepare and deliver. Delivery is confirmed with a photo and recorded on the PayPal transaction.
+      <p className="text-sm font-medium uppercase tracking-wide text-clay">Bamako partner</p>
+      <h1 className="font-display text-3xl font-semibold">Baskets to prepare and deliver</h1>
+      <p className="mb-6 mt-1 max-w-2xl text-muted">
+        Every paid basket lands here. Delivery is confirmed with a photo, shared with the sender and recorded on the PayPal
+        transaction.
       </p>
+      <dl className="mb-6 grid grid-cols-3 gap-3">
+        {[
+          { label: "To prepare", value: rows.filter((r) => r.status === "paid").length },
+          { label: "To deliver", value: rows.filter((r) => r.status === "preparing").length },
+          { label: "Delivered", value: rows.filter((r) => r.status === "delivered").length },
+        ].map((s) => (
+          <div key={s.label} className="rounded-2xl border border-sand bg-paper p-4">
+            <dt className="text-sm text-muted">{s.label}</dt>
+            <dd className="font-display text-3xl font-semibold">{s.value}</dd>
+          </div>
+        ))}
+      </dl>
       <div style={{ height: 480 }}>
         <AgGridReact<BasketView>
+          theme={gridTheme}
           rowData={rows}
           columnDefs={columns}
           getRowId={(p) => p.data.id}

@@ -11,3 +11,12 @@ export const STATUS_LABEL: Record<Basket["status"], string> = {
   delivered: "Delivered",
   refunded: "Refunded",
 };
+
+export const STATUS_PILL: Record<Basket["status"], string> = {
+  proposed: "bg-sand text-muted",
+  awaiting_payment: "bg-sand text-muted",
+  paid: "bg-ochre/20 text-clay-dark",
+  preparing: "bg-ink/10 text-ink",
+  delivered: "bg-leaf-soft text-leaf",
+  refunded: "bg-sand text-muted",
+};
