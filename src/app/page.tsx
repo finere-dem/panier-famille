@@ -193,22 +193,28 @@ export default function Home() {
             e.preventDefault();
             send(input);
           }}
-          className="fixed inset-x-0 bottom-0 bg-gradient-to-t from-cream via-cream to-cream/0 pb-5 pt-6"
+          className="fixed inset-x-0 bottom-0 bg-gradient-to-t from-cream via-cream to-cream/0 pt-6 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
         >
-          <div className="mx-auto flex w-full max-w-xl gap-2 px-4">
-            <input
-              value={input}
-              onChange={(e) => setInput(e.currentTarget.value)}
-              placeholder="Who is it for, what do they need, what budget?"
-              className="min-w-0 flex-1 rounded-full border border-sand bg-paper px-5 py-3 shadow-sm outline-none placeholder:text-muted/70 focus:border-clay"
-            />
-            <button
-              type="submit"
-              disabled={busy || !input.trim()}
-              className="rounded-full bg-clay px-5 py-3 text-sm font-semibold text-cream disabled:opacity-40"
-            >
-              Send
-            </button>
+          {/* One pill composer: the send button sits inside the field instead of floating next to it. */}
+          <div className="mx-auto w-full max-w-xl px-4">
+            <div className="flex items-center gap-2 rounded-full border border-sand bg-paper py-1.5 pl-5 pr-1.5 shadow-sm focus-within:border-clay">
+              <input
+                value={input}
+                onChange={(e) => setInput(e.currentTarget.value)}
+                placeholder="Who is it for, and what budget?"
+                className="min-w-0 flex-1 bg-transparent py-2 text-base outline-none placeholder:text-muted/70"
+              />
+              <button
+                type="submit"
+                aria-label="Send"
+                disabled={busy || !input.trim()}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-clay text-cream transition-colors hover:bg-clay-dark disabled:bg-sand disabled:text-muted"
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 19V5M5 12l7-7 7 7" />
+                </svg>
+              </button>
+            </div>
           </div>
         </form>
       </main>
