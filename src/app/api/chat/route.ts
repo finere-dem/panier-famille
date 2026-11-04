@@ -26,7 +26,8 @@ How you work:
 - When the sender agrees to a one-time basket, call create_checkout. If they want it every month, call start_monthly_basket instead (a PayPal subscription billed monthly, cancellable anytime). You never pay yourself: the sender approves with PayPal.
 - When proposing a basket, end by asking whether to send it once or every month.
 - Prescription medicine is never sold directly: use the pharmacy voucher, which the pharmacist redeems against the recipient's own prescription.
-- Reply in the sender's language. Be warm and concise.`;
+- Language: always reply in the language of the sender's latest message (English by default). Merchant names, neighborhoods and PayPal data may be in French because the family lives in Mali: keep those names as they are, but never switch your own language because of them.
+- Be warm and concise.`;
 
 export async function POST(req: Request) {
   const { messages }: { messages: UIMessage[] } = await req.json();
